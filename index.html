@@ -1,0 +1,722 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Source Detectives</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Courier+Prime:wght@400;700&family=Kalam:wght@400;700&display=swap">
+<style>
+/* Layout concept: a game board. Coloured mission header, owl coach, chunky tactile buttons, two "paper" sources (A = typed police report, B = handwritten notebook). */
+:root{
+  --bg:#EEF1FF; --surface:#FFFFFF; --ink:#1A1D4D; --muted:#555B8F; --line:#D5DAF5; --on:#FFFFFF;
+  --violet:#6246F5; --violet-s:#E6E1FF;
+  --coral:#EE3F56;  --coral-s:#FFE1E5;
+  --teal:#0A9E8D;   --teal-s:#D3F4EE;
+  --sky:#1B84E6;    --sky-s:#D9ECFF;
+  --sun:#FFB800;    --sun-s:#FFF0C2;
+  --green:#22A24A;  --green-s:#D9F3E0;
+  --ok:#1E9E4A; --bad:#D8344A;
+  --paperA:#F3F6FB; --paperAink:#1F2A44; --paperB:#FFF5D1; --paperBink:#3B2A12;
+  --owl:#7C5CFF; --owl2:#CFC4FF;
+  --display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --body:'Atkinson Hyperlegible','Segoe UI',system-ui,sans-serif;
+  --typed:'Courier Prime','Courier New',monospace;
+  --hand:'Kalam','Comic Sans MS',cursive;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12143A; --surface:#1D2052; --ink:#F0F2FF; --muted:#AEB4E6; --line:#343A80; --on:#12143A;
+  --violet:#9A87FF; --violet-s:#2E2878; --coral:#FF7285; --coral-s:#52213A; --teal:#2FD1BC; --teal-s:#12474A;
+  --sky:#5DB0FF; --sky-s:#173F73; --sun:#FFC933; --sun-s:#554212; --green:#4CD36E; --green-s:#17502E;
+  --ok:#4CD36E; --bad:#FF7285; --owl:#9A87FF; --owl2:#4A3FA6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12143A; --surface:#1D2052; --ink:#F0F2FF; --muted:#AEB4E6; --line:#343A80; --on:#12143A;
+  --violet:#9A87FF; --violet-s:#2E2878; --coral:#FF7285; --coral-s:#52213A; --teal:#2FD1BC; --teal-s:#12474A;
+  --sky:#5DB0FF; --sky-s:#173F73; --sun:#FFC933; --sun-s:#554212; --green:#4CD36E; --green-s:#17502E;
+  --ok:#4CD36E; --bad:#FF7285; --owl:#9A87FF; --owl2:#4A3FA6; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55}
+h1,h2,h3{font-family:var(--display);line-height:1.12;text-wrap:balance;margin:0}
+p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+svg{display:block}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:52px;height:52px;border-radius:16px;background:var(--violet);color:var(--on);display:grid;place-items:center;flex:none;transform:rotate(-6deg)}
+.brand h1{font-size:clamp(1.5rem,4.5vw,2.2rem);font-weight:800;letter-spacing:-.01em}
+.brand p{color:var(--muted);font-size:.9rem}
+.stats{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rank{background:var(--sun);color:#3A2A00;font-weight:700;font-size:.85rem;padding:4px 12px;border-radius:99px}
+.xpbar{width:150px;height:14px;border-radius:99px;background:var(--line);overflow:hidden}
+.xpbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--green),var(--sun));border-radius:99px;transition:width .5s}
+#xp{font-family:var(--display);font-weight:800;font-variant-numeric:tabular-nums}
+
+/* mission path */
+.path{display:flex;gap:6px;overflow-x:auto;padding:16px 4px 10px;margin-top:6px}
+.node{flex:1 0 88px;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;color:var(--muted);font-weight:700;font-size:.78rem;line-height:1.2;text-align:center;cursor:pointer;position:relative}
+.node .dot{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:3px solid var(--line);color:var(--c);transition:transform .15s}
+.node:hover .dot{transform:translateY(-3px)}
+.node.cur{color:var(--ink)}
+.node.cur .dot{background:var(--c);color:var(--on);border-color:var(--c);transform:scale(1.1)}
+.node.done .dot{border-color:var(--ok)}
+.node .tick{position:absolute;top:-4px;left:calc(50% + 12px);width:22px;height:22px;border-radius:50%;background:var(--ok);color:var(--on);display:none;place-items:center;border:2px solid var(--bg)}
+.node.done .tick{display:grid}
+
+/* stage */
+#stage{--mc:var(--violet);--mc-s:var(--violet-s);margin-top:6px}
+#stage[data-m="0"]{--mc:var(--sky);--mc-s:var(--sky-s)}
+#stage[data-m="2"]{--mc:var(--coral);--mc-s:var(--coral-s)}
+#stage[data-m="3"]{--mc:var(--teal);--mc-s:var(--teal-s)}
+#stage[data-m="4"]{--mc:var(--sky);--mc-s:var(--sky-s)}
+#stage[data-m="5"]{--mc:var(--sun);--mc-s:var(--sun-s);--on:#2E2200}
+#stage[data-m="6"]{--mc:var(--green);--mc-s:var(--green-s)}
+#stage[data-m="7"]{--mc:var(--violet);--mc-s:var(--violet-s)}
+.mhead{background:var(--mc);color:var(--on);border-radius:24px;padding:22px 24px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;position:relative;overflow:hidden}
+.mhead::after{content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.14)}
+.mhead .eyebrow{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem;opacity:.9}
+.mhead h2{font-size:clamp(1.6rem,5vw,2.4rem);font-weight:800;margin:4px 0 10px}
+.fixes{display:flex;flex-wrap:wrap;gap:6px}
+.fixes span{background:rgba(255,255,255,.22);padding:3px 11px;border-radius:99px;font-size:.84rem;font-weight:700}
+#stage[data-m="5"] .fixes span{background:rgba(0,0,0,.12)}
+.mhead .big{width:84px;height:84px;border-radius:24px;background:rgba(255,255,255,.22);display:grid;place-items:center;position:relative;z-index:1}
+.mhead .big svg{width:46px;height:46px}
+
+.coach{display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:end;margin-top:16px}
+.owlwrap{width:76px}
+.owl{width:76px;height:76px;overflow:visible}
+.owlwrap.cheer .owl,.owlwrap.oops .owl{animation:hop .6s}
+.bubble{background:var(--surface);border:2px solid var(--mc);border-radius:18px;padding:12px 16px;position:relative;min-width:0}
+.bubble::before{content:"";position:absolute;left:-9px;bottom:20px;width:14px;height:14px;background:var(--surface);border-left:2px solid var(--mc);border-bottom:2px solid var(--mc);transform:rotate(45deg)}
+
+.card{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:20px;margin-top:16px;min-width:0}
+.card>h3{font-size:1.3rem;font-weight:800;margin-bottom:6px}
+.card>.lead{color:var(--muted);margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media(max-width:760px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}.mhead{grid-template-columns:1fr}.mhead .big{display:none}}
+
+.btn{background:var(--mc);color:var(--on);border:0;border-radius:14px;padding:11px 20px;font-weight:700;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.22);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+
+/* hero */
+.hero{border-radius:24px;overflow:hidden;border:2px solid var(--line)}
+.hero svg{width:100%;height:auto;max-height:300px}
+.case{display:grid;grid-template-columns:1fr;gap:6px;padding:20px;background:var(--surface)}
+.case h2{font-size:clamp(1.6rem,4.5vw,2.3rem);font-weight:800}
+.case .tag{display:inline-block;background:var(--sky-s);color:var(--sky);font-weight:700;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:99px;justify-self:start}
+
+/* sources */
+.paper{border-radius:6px 6px 14px 14px;padding:0 0 16px;box-shadow:0 6px 0 rgba(26,29,77,.14);min-width:0;position:relative}
+.paper header{display:flex;flex-direction:column;gap:2px;padding:10px 16px;border-radius:6px 6px 0 0}
+.paper .stamp{font-family:var(--display);font-weight:800;font-size:1.25rem}
+.paper .sub{font-size:.82rem;opacity:.85}
+.paper.A{background:var(--paperA);color:var(--paperAink)}
+.paper.A header{background:var(--sky);color:#fff}
+.paper.A .txt{font-family:var(--typed);font-size:1rem;line-height:1.7}
+.paper.B{background:var(--paperB);color:var(--paperBink);background-image:repeating-linear-gradient(transparent 0 33px,rgba(120,90,30,.18) 33px 34px)}
+.paper.B header{background:var(--sun);color:#3A2A00}
+.paper.B .txt{font-family:var(--hand);font-size:1.12rem;line-height:34px}
+.paper .txt{padding:12px 16px 0}
+.sn{display:inline-block;font-family:var(--body);font-size:.66rem;font-weight:700;background:rgba(0,0,0,.14);border-radius:5px;padding:0 5px;margin-right:4px;vertical-align:2px;line-height:1.4}
+button.sent{display:inline;background:none;border:0;padding:1px 2px;margin:0;text-align:left;cursor:pointer;color:inherit;font:inherit;border-radius:5px;border-bottom:2px dashed rgba(0,0,0,.25);line-height:inherit}
+button.sent:hover{background:rgba(0,0,0,.07)}
+button.sent[aria-pressed="true"]{background:#FFE35C;color:#2A2200;border-bottom-color:#B58A00}
+button.sent.ok{background:#BFEFCB;color:#0F3D1E;border-bottom:2px solid #1E9E4A}
+button.sent.no{background:#FFC9D0;color:#5A0A18;border-bottom:2px solid #D8344A;text-decoration:line-through}
+button.sent.miss{background:#fff;color:#5A3D00;border:2px dashed #E09A00;box-shadow:0 0 0 2px #FFE9A8}
+button.sent.softsel{background:#E3E7F5;color:#1F2A44}
+
+/* tagging */
+.pens{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.pen{border:2px solid var(--pc);background:var(--surface);color:var(--ink);border-radius:99px;padding:6px 14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px}
+.pen i{width:14px;height:14px;border-radius:50%;background:var(--pc)}
+.pen[aria-pressed="true"]{background:var(--pc);color:var(--on)}
+.pen[aria-pressed="true"] i{background:var(--on)}
+.pen[data-p="task"]{--pc:var(--violet)}.pen[data-p="src"]{--pc:var(--sky)}.pen[data-p="focus"]{--pc:var(--coral)}
+.pen[data-p="task"][aria-pressed="true"],.pen[data-p="focus"][aria-pressed="true"]{--on:#fff}
+.qline{font-size:1.35rem;line-height:2.4;font-family:var(--display);font-weight:600}
+.tok{background:none;border:0;border-bottom:3px solid transparent;padding:2px 3px;margin:0 1px;cursor:pointer;font:inherit;border-radius:6px;color:var(--ink)}
+.tok:hover{background:var(--line)}
+.tok[data-tag="task"]{background:var(--violet-s);border-bottom-color:var(--violet)}
+.tok[data-tag="src"]{background:var(--sky-s);border-bottom-color:var(--sky)}
+.tok[data-tag="focus"]{background:var(--coral-s);border-bottom-color:var(--coral)}
+.stop{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stop div{border-radius:16px;padding:14px;background:var(--mc-s);min-width:0}
+.stop b{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--mc);color:var(--on);font-family:var(--display);font-size:1.4rem;margin-bottom:8px}
+.stop span{font-size:.92rem;display:block}
+.stop strong{display:block;font-family:var(--display);font-size:1.05rem}
+@media(max-width:760px){.stop{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* feedback */
+.fb{border-radius:14px;padding:12px 16px;margin-top:14px;border:2px solid}
+.fb.ok{background:var(--green-s);border-color:var(--ok)}
+.fb.bad{background:var(--coral-s);border-color:var(--bad)}
+.fb.info{background:var(--sun-s);border-color:var(--sun)}
+.fb ul{margin:6px 0 0;padding-left:20px}
+.why{margin-top:8px;padding:8px 12px;border-radius:10px;font-size:.96rem}
+.why.ok{background:var(--green-s)}.why.bad{background:var(--coral-s)}
+
+/* mcq */
+.q{border-top:2px dashed var(--line);padding:16px 0 4px}
+.q:first-of-type{border-top:0;padding-top:0}
+.qt{font-weight:700;font-size:1.05rem;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:10px 14px;cursor:pointer;box-shadow:0 3px 0 var(--line);transition:transform .08s}
+.opt:hover:not(:disabled){border-color:var(--mc)}
+.opt:active:not(:disabled){transform:translateY(2px)}
+.opt.ok{background:var(--green-s);border-color:var(--ok);box-shadow:0 3px 0 var(--ok)}
+.opt.bad{background:var(--coral-s);border-color:var(--bad);box-shadow:none;opacity:.8}
+.opt:disabled{cursor:default}
+.blank{display:inline-block;min-width:4.5em;border-bottom:3px solid var(--mc);text-align:center;font-weight:700}
+
+/* classify rows */
+.crow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;align-items:center;padding:14px 0;border-top:2px dashed var(--line)}
+.crow:first-of-type{border-top:0}
+.crow .why{grid-column:1/-1;margin-top:0}
+.cbtns{display:flex;flex-wrap:wrap;gap:8px}
+.cbtn{border:2px solid var(--cc);background:var(--surface);color:var(--ink);border-radius:12px;padding:6px 12px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 3px 0 var(--cc)}
+.cbtn:hover:not(:disabled){background:var(--cs)}
+.cbtn:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--cc)}
+.cbtn.right{background:var(--cc);color:var(--on);box-shadow:none}
+.cbtn.wrong{opacity:.4;text-decoration:line-through;box-shadow:none}
+.cbtn:disabled{cursor:default}
+.crow.shake{animation:shake .35s}
+@media(max-width:620px){.crow{grid-template-columns:minmax(0,1fr)}}
+
+/* concept cards */
+.pt{border-radius:16px;padding:14px;background:var(--mc-s);min-width:0}
+.pt h4{margin:0 0 8px;font-family:var(--display);font-size:1.05rem}
+.pair{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:stretch;margin:8px 0}
+.pair .a,.pair .b{border-radius:12px;padding:8px 10px;font-size:.92rem;min-width:0}
+.pair .a{background:var(--sky-s);border:2px solid var(--sky)}
+.pair .b{background:var(--sun-s);border:2px solid var(--sun)}
+.pair .vs{align-self:center;font-weight:800;font-size:1.4rem;color:var(--muted)}
+.verdict{display:inline-block;border-radius:99px;padding:2px 12px;font-weight:700;font-size:.85rem;color:#fff}
+.verdict.d{background:var(--coral);color:#fff}.verdict.s{background:var(--green);color:#fff}
+.trap{border-radius:16px;padding:14px;border:2px solid var(--line);min-width:0}
+.trap h4{margin:0 0 8px;font-family:var(--display);font-size:1.05rem;color:var(--coral)}
+.trap .bad,.trap .good{border-radius:10px;padding:8px 10px;margin-top:8px;font-size:.92rem}
+.trap .bad{background:var(--coral-s)}.trap .good{background:var(--green-s)}
+.trap small{display:block;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.7rem;margin-bottom:2px}
+
+/* focus pill */
+.focus{display:inline-flex;gap:8px;align-items:center;background:var(--coral-s);border:2px solid var(--coral);border-radius:99px;padding:5px 14px;font-weight:700;margin-bottom:12px}
+.focus i{width:10px;height:10px;border-radius:50%;background:var(--coral)}
+
+/* timeline */
+.tcol{min-width:0}
+.tcol h4{font-family:var(--display);margin:0 0 10px}
+.tl{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:t}
+.tl li{counter-increment:t;display:flex;gap:10px;align-items:center;background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:8px 12px;font-size:.95rem}
+.tl li::before{content:counter(t);flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--line);font-weight:700;font-size:.8rem}
+.tl li.stone{border-color:var(--sun);background:var(--sun-s)}
+.tl li.shot{border-color:var(--coral);background:var(--coral-s)}
+.tl li.stone::before{background:var(--sun);color:#2E2200}.tl li.shot::before{background:var(--coral);color:#fff}
+
+/* toolkit */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border-radius:99px;padding:4px 14px;font-weight:700;font-size:.95rem;border:2px solid}
+.chip.s{background:var(--green-s);border-color:var(--green)}
+.chip.d{background:var(--coral-s);border-color:var(--coral)}
+.chip.e{background:var(--sky-s);border-color:var(--sky)}
+button.chip{cursor:pointer;color:var(--ink);font-family:inherit}
+button.chip:hover{filter:brightness(.96);transform:translateY(-1px)}
+
+/* writing */
+.wlab{display:flex;gap:8px;align-items:center;font-weight:700;margin:14px 0 6px}
+.wlab i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--mc);color:var(--on);display:grid;place-items:center;font-size:.85rem;flex:none}
+textarea{width:100%;min-height:84px;border:2px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--surface);color:var(--ink);font:inherit;resize:vertical}
+textarea:focus{border-color:var(--mc);outline:none;box-shadow:0 0 0 3px var(--mc-s)}
+.check{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.check li{display:flex;gap:10px;align-items:flex-start;font-size:.95rem}
+.check li i{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:transparent;margin-top:1px}
+.check li.on i{background:var(--ok);border-color:var(--ok);color:var(--on)}
+.check li.on{font-weight:700}
+.model{background:var(--green-s);border:2px solid var(--ok);border-radius:16px;padding:16px;margin-top:16px}
+.model mark{background:#FFE35C;color:#2A2200;border-radius:4px;padding:0 3px}
+.model .tr{background:var(--coral);color:#fff;border-radius:4px;padding:0 4px;font-weight:700}
+
+/* certificate */
+.cert{text-align:center;padding:28px 18px}
+.cert h3{font-size:clamp(1.6rem,5vw,2.4rem)!important}
+.badges{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:18px 0}
+.badge{width:116px;text-align:center;font-size:.82rem;font-weight:700;color:var(--muted)}
+.badge .medal{margin:0 auto 6px;opacity:.35;filter:grayscale(1)}
+.badge.got{color:var(--ink)}.badge.got .medal{opacity:1;filter:none}
+.medal{width:64px;height:64px;border-radius:50%;background:var(--mc);color:var(--on);display:grid;place-items:center;border:4px solid var(--surface);box-shadow:0 0 0 3px var(--mc)}
+.medal svg{width:30px;height:30px}
+.rules{text-align:left;display:grid;gap:10px;max-width:640px;margin:16px auto 0;padding:0;list-style:none;counter-reset:r}
+.rules li{counter-increment:r;display:flex;gap:12px;align-items:flex-start}
+.rules li::before{content:counter(r);flex:none;width:28px;height:28px;border-radius:50%;background:var(--violet);color:var(--on);display:grid;place-items:center;font-weight:800;font-size:.9rem}
+
+/* modal, toast, confetti */
+#modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px}
+#modal[hidden]{display:none}
+.mback{position:absolute;inset:0;background:rgba(10,12,40,.6)}
+.mbox{position:relative;background:var(--surface);border-radius:28px;padding:28px 26px;max-width:440px;width:100%;text-align:center;border:3px solid var(--mc);animation:pop .4s}
+.mbox .medal{width:92px;height:92px;margin:-70px auto 12px}
+.mbox .medal svg{width:42px;height:42px}
+.mbox .eyebrow{color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem}
+.mbox h2{font-size:1.9rem;font-weight:800;margin:4px 0 8px}
+.mbox .row{justify-content:center}
+#toasts{position:fixed;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;z-index:60}
+.toast{background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:800;border-radius:99px;padding:6px 18px;animation:rise 1.4s forwards}
+.conf{position:fixed;top:-12px;width:10px;height:14px;z-index:70;animation:fall 2.2s linear forwards;pointer-events:none}
+footer{margin-top:28px;color:var(--muted);font-size:.86rem;text-align:center}
+.nav2{display:flex;justify-content:space-between;gap:10px;margin-top:20px;flex-wrap:wrap}
+
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-14px) rotate(-6deg)}70%{transform:translateY(0) rotate(4deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes rise{0%{transform:translateY(10px);opacity:0}15%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{transform:translateY(-24px);opacity:0}}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap" id="top">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" id="logo"></div>
+      <div><h1>Source Detectives</h1><p>Grade 11 History · compare sources like a historian</p></div>
+    </div>
+    <div class="stats">
+      <span class="rank" id="rank">Trainee Detective</span>
+      <div class="xpbar" role="progressbar" aria-label="Experience points" aria-valuemin="0" aria-valuemax="385" aria-valuenow="0" id="xpbar"><i id="xpfill"></i></div>
+      <b id="xp">0 XP</b>
+    </div>
+  </header>
+  <nav class="path" id="path" aria-label="Missions"></nav>
+  <main id="stage" data-m="0"></main>
+  <footer>The two sources in this simulation were written for this lesson, based on the general historical record of the Soweto Uprising. They are not quotations from real documents.</footer>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="modal" hidden></div>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const h=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild};
+
+/* ---------- icons ---------- */
+const P={
+ brief:'<path d="M3 7h6l2 2h10v10H3z"/>',
+ q:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/>',
+ cmp:'<circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/>',
+ find:'<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l6 6"/>',
+ time:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+ pen:'<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/>',
+ star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+ ok:'<path d="M5 12.5l4.5 4.5L19 7.5"/>'
+};
+const ic=n=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+const OWL=`<svg class="owl" viewBox="0 0 100 100" aria-hidden="true">
+<ellipse cx="50" cy="62" rx="30" ry="32" fill="var(--owl)"/><ellipse cx="50" cy="70" rx="19" ry="21" fill="var(--owl2)"/>
+<path d="M20 44L15 22l24 12z" fill="var(--owl)"/><path d="M80 44l5-22-24 12z" fill="var(--owl)"/>
+<circle cx="37" cy="47" r="14" fill="#fff" stroke="#1A1D4D" stroke-width="3"/><circle cx="63" cy="47" r="14" fill="#fff" stroke="#1A1D4D" stroke-width="3"/>
+<line x1="51" y1="47" x2="49" y2="47" stroke="#1A1D4D" stroke-width="3"/>
+<circle cx="39" cy="48" r="5.5" fill="#1A1D4D"/><circle cx="61" cy="48" r="5.5" fill="#1A1D4D"/>
+<circle cx="41" cy="46" r="1.8" fill="#fff"/><circle cx="63" cy="46" r="1.8" fill="#fff"/>
+<path d="M44 57l6 9 6-9z" fill="#FFB800"/>
+<path d="M26 28l24-12 24 12-24 11z" fill="#1A1D4D"/><path d="M74 28v14" stroke="#FFB800" stroke-width="3"/><circle cx="74" cy="44" r="3" fill="#FFB800"/>
+<path d="M40 92l-4 6M50 93v6M60 92l4 6" stroke="#FFB800" stroke-width="3.5" stroke-linecap="round"/>
+</svg>`;
+
+function heroSVG(){
+  const cols=['#EE3F56','#FFB800','#22A24A','#1B84E6','#6246F5','#0A9E8D'];
+  let houses='',kids='';
+  const hc=['#F7B267','#F4845F','#9BC1BC','#F25C54','#5CA4A9','#E6C229','#8D99AE','#EF959D'];
+  for(let i=0;i<9;i++){const x=10+i*92,hh=46+(i%3)*10,c=hc[i%hc.length];
+    houses+=`<g transform="translate(${x},${222-hh})"><rect width="70" height="${hh}" fill="${c}"/><path d="M-5 0L35 -22L75 0z" fill="#1A1D4D" opacity=".8"/><rect x="26" y="${hh-26}" width="16" height="26" fill="#1A1D4D" opacity=".75"/><rect x="8" y="10" width="12" height="12" fill="#FFF3B0"/></g>`}
+  for(let i=0;i<19;i++){const x=40+i*40+(i%2?5:0),y=262+(i%3)*9,c=cols[i%6],ph=34+(i%4)*10;
+    kids+=`<g transform="translate(${x},${y})"><rect x="-9" y="-30" width="18" height="30" rx="6" fill="${c}"/><circle cy="-39" r="9" fill="${i%2?'#8D5A3B':'#5B3A29'}"/>${i%3===0?`<line x1="11" y1="-26" x2="11" y2="${-ph-28}" stroke="#1A1D4D" stroke-width="3"/><rect x="-4" y="${-ph-52}" width="38" height="26" rx="3" fill="${cols[(i+2)%6]}" stroke="#1A1D4D" stroke-width="2"/><path d="M2 ${-ph-44}h26M2 ${-ph-36}h18" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`:''}</g>`}
+  return `<svg viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Illustration of school learners marching with placards past township houses">
+  <defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4FA8FF"/><stop offset="1" stop-color="#FFD9A0"/></linearGradient></defs>
+  <rect width="800" height="300" fill="url(#sk)"/><circle cx="650" cy="70" r="38" fill="#FFE066"/><circle cx="650" cy="70" r="52" fill="#FFE066" opacity=".3"/>
+  <g fill="#fff" opacity=".9"><ellipse cx="140" cy="60" rx="50" ry="16"/><ellipse cx="175" cy="48" rx="34" ry="14"/><ellipse cx="420" cy="90" rx="44" ry="13"/></g>
+  <path d="M0 190q120-50 260-10t300-20q140-30 240 20v70H0z" fill="#7CC27A"/>
+  ${houses}
+  <rect y="236" width="800" height="64" fill="#C98B5B"/><rect y="236" width="800" height="6" fill="#B07645"/>
+  ${kids}</svg>`;
+}
+
+/* ---------- data ---------- */
+const SRC={
+ A:{title:'Source A',sub:'Police report written on 16 June 1976 (adapted)',s:[
+  {id:'A1',t:'At about 10:00 a crowd of roughly 500 learners gathered near Orlando West Junior Secondary School.',why:'This gives the time and size of the crowd. It is background and does not say how the violence started.'},
+  {id:'A2',t:'The crowd was singing and carrying placards.',why:'Singing and placards describe the crowd. They do not show how the violence started.'},
+  {id:'A3',t:'Police arrived and ordered the crowd to disperse.',opt:1,why:'Useful background about what police asked, but it does not say who began the violence. Choosing it costs you nothing.'},
+  {id:'A4',t:'The learners refused and began throwing stones at the police vehicles.',rel:1,why:'Source A says the learners began the violence by throwing stones.'},
+  {id:'A5',t:'A police officer fired warning shots, and when the stone-throwing continued, further shots were fired in self-defence.',rel:1,why:'Source A says police shots came after the stones, as self-defence. This gives the order of events.'},
+  {id:'A6',t:'Order was restored in the late afternoon.',why:'This is what happened afterwards, not how the violence started.'},
+  {id:'A7',t:'Two people are reported to have died.',why:'The death toll is an outcome, not the start of the violence.'}]},
+ B:{title:'Source B',sub:'Memory of a learner who marched (adapted)',s:[
+  {id:'B1',t:'We left school at about eight in the morning and joined a long line of learners walking towards Orlando Stadium.',why:'This is about where the learners were going. It is background only.'},
+  {id:'B2',t:'There were thousands of us, mostly in school uniform, singing and holding placards that said "Down with Afrikaans".',why:'Crowd size and placards describe the crowd, not the start of the violence.'},
+  {id:'B3',t:'Near Vilakazi Street, police stopped us. We carried no weapons.',rel:1,why:'The learner says police stopped them and that they were unarmed. This challenges the idea that learners started the violence.'},
+  {id:'B4',t:'A policeman threw a tear-gas canister and then shots were fired into the crowd.',rel:1,why:'Source B says the police acted first, with tear gas and then shots.'},
+  {id:'B5',t:'Only after that did some learners throw stones.',rel:1,why:'Source B says stones came after the police action. This gives the order of events.'},
+  {id:'B6',t:'Many learners were wounded, and a young boy was carried away bleeding.',why:'Injuries are a result of the violence, not how it started.'},
+  {id:'B7',t:'By evening, parts of the township were burning.',why:'This is the aftermath, not the start.'}]}
+};
+const QUESTION='Compare Source A and Source B. Explain how the two sources differ in their evidence about how the violence started.';
+
+const MISSIONS=[
+ {name:'Briefing',icon:'brief',c:'sky'},
+ {name:'Decode the Question',icon:'q',c:'violet',badge:'Question Cracker',fix:['Rushing to answer','Missing what is required','Misreading the word “differ”','Not addressing the topic'],learn:'You slowed down, found the task words and locked onto the exact topic before writing anything.'},
+ {name:'Compare and Difference',icon:'cmp',c:'coral',badge:'Compare Champion',fix:['What does “compare” mean?','What does “difference” mean?','Listing instead of comparing'],learn:'A difference is where both sources talk about the same point but say something unlike each other.'},
+ {name:'Evidence Hunter',icon:'find',c:'teal',badge:'Evidence Hunter',fix:['Extracting evidence','Selecting only relevant evidence','Lack of evidence'],learn:'You picked only the sentences that answer the focus, and quoted just the part that proves your point.'},
+ {name:'Event Detective',icon:'time',c:'sky',badge:'Event Detective',fix:['Telling events apart','Spotting differences in sources'],learn:'You matched events to the right source and noticed that the same events can appear in a different order.'},
+ {name:'Link Builder',icon:'link',c:'sun',badge:'Link Master',fix:['Using transition words','Linking Source A to Source B'],learn:'Words like however, whereas and similarly tell the marker that you are comparing.'},
+ {name:'Write It Up',icon:'pen',c:'green',badge:'Source Master',fix:['Comparing in writing','Staying on topic','Evidence plus transitions'],learn:'You joined every skill into one clear paragraph that answers exactly what was asked.'},
+ {name:'Certificate',icon:'star',c:'violet'}
+];
+const PARTS={1:['tags','quiz'],2:['sort'],3:['hunt','quote'],4:['sort','order'],5:['words','fill'],6:['write']};
+const MAXXP=385;
+const RANKS=[[0,'Trainee Detective'],[100,'Junior Historian'],[200,'Senior Detective'],[300,'Chief Historian']];
+
+/* ---------- state ---------- */
+const state={xp:0,awarded:{},done:{},parts:{},cur:0};
+const KEY='source-detectives-v1';
+function save(){try{localStorage.setItem(KEY,JSON.stringify({xp:state.xp,awarded:state.awarded,done:state.done,parts:state.parts}))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null');if(d){state.xp=d.xp||0;state.awarded=d.awarded||{};state.done=d.done||{};state.parts=d.parts||{}}}catch(e){}}
+function rankName(){let r=RANKS[0][1];RANKS.forEach(x=>{if(state.xp>=x[0])r=x[1]});return r}
+function updateXP(){
+  $('#xp').textContent=state.xp+' XP';$('#rank').textContent=rankName();
+  const pct=Math.min(100,Math.round(state.xp/MAXXP*100));$('#xpfill').style.width=pct+'%';$('#xpbar').setAttribute('aria-valuenow',state.xp);
+}
+function toast(t){const e=h(`<span class="toast">${t}</span>`);$('#toasts').appendChild(e);setTimeout(()=>e.remove(),1500)}
+function award(k,p){if(state.awarded[k])return false;state.awarded[k]=p;state.xp+=p;save();updateXP();toast('+'+p+' XP');return true}
+function say(msg,mood){const t=$('#coachText');if(!t)return;t.innerHTML=msg;const w=$('.owlwrap');if(w&&mood){w.classList.remove('cheer','oops');void w.offsetWidth;w.classList.add(mood)}}
+function confetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const cs=['#EE3F56','#FFB800','#22A24A','#1B84E6','#6246F5','#0A9E8D'];
+  for(let i=0;i<46;i++){const e=document.createElement('i');e.className='conf';e.style.left=Math.random()*100+'vw';e.style.background=cs[i%6];e.style.animationDelay=(Math.random()*.6)+'s';e.style.animationDuration=(1.8+Math.random()*1.4)+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),3800)}
+}
+function part(m,p){
+  state.parts[m+'.'+p]=true;save();
+  if(PARTS[m].every(x=>state.parts[m+'.'+x])&&!state.done[m]){state.done[m]=true;save();renderNav();showBadge(m)}else renderNav();
+}
+function showBadge(m){
+  const M=MISSIONS[m],el=$('#modal');
+  el.hidden=false;
+  el.innerHTML=`<div class="mback"></div><div class="mbox" role="dialog" aria-modal="true" aria-labelledby="mt" style="--mc:var(--${M.c});--on:${M.c==='sun'?'#2E2200':'var(--on)'}"><div class="medal">${ic(M.icon)}</div><p class="eyebrow">Badge earned</p><h2 id="mt">${M.badge}</h2><p>${M.learn}</p><div class="row"><button class="btn" id="mnext" style="--mc:var(--violet);--on:#fff">${m<6?'Next mission':'See my certificate'}</button><button class="btn ghost" id="mclose">Stay here</button></div></div>`;
+  confetti();
+  $('#mnext').onclick=()=>{el.hidden=true;go(m+1)};
+  $('#mclose').onclick=()=>{el.hidden=true};
+  $('.mback',el).onclick=()=>{el.hidden=true};
+  $('#mnext').focus();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#modal').hidden=true});
+
+/* ---------- reusable activity builders ---------- */
+function mcq(host,items,key,onAll){
+  let right=0;
+  items.forEach((it,qi)=>{
+    const c=h(`<div class="q"><p class="qt">${it.q}</p><div class="opts">${it.o.map((o,oi)=>`<button type="button" class="opt" data-i="${oi}">${o.t}</button>`).join('')}</div><p class="why" hidden></p></div>`);
+    let solved=false;
+    $$('.opt',c).forEach(b=>b.onclick=()=>{
+      if(solved)return;
+      const o=it.o[+b.dataset.i],w=$('.why',c);w.hidden=false;
+      if(o.ok){solved=true;b.classList.add('ok');w.className='why ok';w.innerHTML='<b>Correct.</b> '+o.why;award(key+qi,it.pts||10);right++;
+        $$('.opt',c).forEach(x=>x.disabled=true);say('Yes! '+(it.say||'Good thinking.'),'cheer');if(right===items.length&&onAll)onAll()}
+      else{b.classList.add('bad');b.disabled=true;w.className='why bad';w.innerHTML='<b>Not quite.</b> '+o.why;say('Read each choice again and test it against the question.','oops')}
+    });
+    host.appendChild(c);
+  });
+}
+function classify(host,items,cats,key,pts,onAll){
+  let n=0;
+  items.forEach((it,i)=>{
+    const row=h(`<div class="crow"><div class="ctext">${it.t}</div><div class="cbtns">${cats.map(c=>`<button type="button" class="cbtn" data-k="${c.k}" style="--cc:var(--${c.c});--cs:var(--${c.c}-s)">${c.l}</button>`).join('')}</div><p class="why" hidden></p></div>`);
+    let solved=false;
+    $$('.cbtn',row).forEach(b=>b.onclick=()=>{
+      if(solved)return;
+      const w=$('.why',row);w.hidden=false;
+      if(b.dataset.k===it.ans){solved=true;b.classList.add('right');$$('.cbtn',row).forEach(x=>x.disabled=true);w.className='why ok';w.innerHTML='<b>Correct.</b> '+it.why;award(key+i,pts);n++;say('Nice. '+(it.say||'Keep going.'),'cheer');if(n===items.length&&onAll)onAll()}
+      else{b.classList.add('wrong');b.disabled=true;w.className='why bad';w.innerHTML='<b>Not quite.</b> '+(it.hint||'Look again. Do both sources talk about the SAME point?');row.classList.remove('shake');void row.offsetWidth;row.classList.add('shake');say('Try another box. Read the statement slowly.','oops')}
+    });
+    host.appendChild(row);
+  });
+}
+function paper(k,pick){
+  const s=SRC[k];
+  return `<article class="paper ${k}"><header><span class="stamp">${s.title}</span><span class="sub">${s.sub}</span></header><p class="txt">${s.s.map(x=>pick?`<button type="button" class="sent" data-id="${x.id}" aria-pressed="false"><b class="sn">${x.id}</b>${x.t}</button>`:`<span class="sent"><b class="sn">${x.id}</b>${x.t}</span>`).join(' ')}</p></article>`;
+}
+function head(m,coachMsg){
+  const M=MISSIONS[m];
+  return `<section class="mhead"><div><p class="eyebrow">Mission ${m} of 6</p><h2>${M.name}</h2><div class="fixes">${M.fix.map(f=>`<span>${f}</span>`).join('')}</div></div><div class="big">${ic(M.icon)}</div></section>
+  <div class="coach"><div class="owlwrap">${OWL}</div><div class="bubble" id="coachText">${coachMsg}</div></div>`;
+}
+function navBar(m){
+  return `<div class="nav2">${m>0?`<button class="btn ghost" id="prev" type="button">Back</button>`:'<span></span>'}${m<7?`<button class="btn" id="next" type="button" style="--mc:var(--violet);--on:#fff">${m===0?'Start Mission 1':m===6?'See my certificate':'Next mission'}</button>`:''}</div>`;
+}
+function bindNav(m){const p=$('#prev'),n=$('#next');if(p)p.onclick=()=>go(m-1);if(n)n.onclick=()=>go(m+1)}
+
+/* ---------- nav ---------- */
+function renderNav(){
+  const nav=$('#path');nav.innerHTML='';
+  MISSIONS.forEach((M,i)=>{
+    const b=h(`<button type="button" class="node ${state.cur===i?'cur':''} ${state.done[i]?'done':''}" style="--c:var(--${M.c});${M.c==='sun'&&state.cur===i?'--on:#2E2200':''}" ${state.cur===i?'aria-current="step"':''}><span class="dot">${ic(M.icon)}</span><span class="tick">${ic('ok').replace('width="24" height="24"','width="14" height="14"')}</span>${i>0&&i<7?`Mission ${i}<br>${M.name}`:M.name}</button>`);
+    b.onclick=()=>go(i);nav.appendChild(b);
+  });
+}
+function go(i){
+  state.cur=i;const st=$('#stage');st.dataset.m=i;renderNav();
+  [renderBrief,renderM1,renderM2,renderM3,renderM4,renderM5,renderM6,renderCert][i](st);
+  bindNav(i);
+  $('#top').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- 0 Briefing ---------- */
+function renderBrief(st){
+  st.innerHTML=`<div class="hero">${heroSVG()}<div class="case"><span class="tag">Case file · 16 June 1976</span><h2>The Soweto Source Case</h2><p>Thousands of school learners in Soweto marched against the use of Afrikaans as a language of teaching. Two people recorded what happened that day. Your job as a junior historian is to compare their accounts and show exactly how they differ.</p></div></div>
+  <div class="coach" style="--mc:var(--sky)"><div class="owlwrap">${OWL}</div><div class="bubble" id="coachText">Hello, I am Ink the owl. Historians do not rush. Read both sources once now, then we will work through six short missions. Each mission fixes a mistake many Grade 11 learners make.</div></div>
+  <section class="card"><h3>Read both sources first</h3><p class="lead">Source A is typed like an official report. Source B is a learner's handwritten memory. Notice who wrote each one.</p><div class="grid2">${paper('A')}${paper('B')}</div></section>
+  <section class="card"><h3>The case question</h3><p class="qline" style="line-height:1.5;font-size:1.25rem">${QUESTION}</p><p class="lead" style="margin-top:10px">In six missions you will learn to decode it, compare, find evidence, sort events, link your ideas and write the answer.</p></section>
+  <section class="card"><h3>Your six missions</h3><div class="grid3">${MISSIONS.slice(1,7).map((M,i)=>`<div class="pt" style="--mc-s:var(--${M.c}-s)"><h4>${i+1}. ${M.name}</h4><p style="font-size:.92rem">${M.fix.join(' · ')}</p></div>`).join('')}</div></section>${navBar(0)}`;
+}
+
+/* ---------- 1 Decode ---------- */
+const TOK=[{t:'Compare',e:'task'},{t:'Source A',e:'src'},{t:'and'},{t:'Source B.',e:'src'},{t:'Explain',e:'task'},{t:'how',o:1},{t:'the',o:1},{t:'two',o:1},{t:'sources',o:1},{t:'differ',e:'task'},{t:'in'},{t:'their'},{t:'evidence',o:1},{t:'about'},{t:'how',o:1},{t:'the',o:1},{t:'violence',e:'focus'},{t:'started.',e:'focus'}];
+function renderM1(st){
+  st.innerHTML=head(1,'Rule one of history: STOP before you write. A rushed answer usually answers a different question. Tag the question first.')+`
+  <section class="card"><h3>The S.T.O.P. rule</h3><p class="lead">Do these four things before you write a single word.</p>
+    <div class="stop"><div><b>S</b><strong>Slow down</strong><span>Read the whole question twice.</span></div><div><b>T</b><strong>Task words</strong><span>What must I DO? Compare, explain, differ…</span></div><div><b>O</b><strong>Origin</strong><span>Which sources must I use?</span></div><div><b>P</b><strong>Point</strong><span>What exact topic is the focus?</span></div></div></section>
+  <section class="card"><h3>Step 1: Tag the question</h3><p class="lead">Choose a pen, then tap the words. Tap a tagged word again to remove the tag. Only the key words need a pen.</p>
+    <div class="pens" id="pens"><button type="button" class="pen" data-p="task" aria-pressed="true"><i></i>Task: what must I do?</button><button type="button" class="pen" data-p="src" aria-pressed="false"><i></i>Sources: which ones?</button><button type="button" class="pen" data-p="focus" aria-pressed="false"><i></i>Focus: what topic?</button></div>
+    <p class="qline" id="qline">${TOK.map((x,i)=>`<button type="button" class="tok" data-i="${i}">${x.t}</button>`).join(' ')}</p>
+    <div class="row"><button class="btn" id="chk" type="button">Check my tags</button><button class="btn ghost" id="clr" type="button">Clear all</button></div><div id="tagfb"></div></section>
+  <section class="card"><h3>Step 2: What is really required?</h3><p class="lead">Answer all three to prove you understand the question.</p><div id="qz"></div></section>`+navBar(1);
+  let pen='task';const tags={};
+  $$('.pen').forEach(b=>b.onclick=()=>{pen=b.dataset.p;$$('.pen').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+  $$('.tok').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(tags[i]===pen){delete tags[i];b.removeAttribute('data-tag')}else{tags[i]=pen;b.dataset.tag=pen}});
+  $('#clr').onclick=()=>{Object.keys(tags).forEach(k=>delete tags[k]);$$('.tok').forEach(b=>b.removeAttribute('data-tag'));$('#tagfb').innerHTML=''};
+  $('#chk').onclick=()=>{
+    let miss=0,wrong=0;
+    TOK.forEach((x,i)=>{const g=tags[i];if(x.o)return;if(x.e){if(!g)miss++;else if(g!==x.e)wrong++}else if(g)wrong++});
+    const fb=$('#tagfb');
+    if(!miss&&!wrong){
+      fb.innerHTML=`<div class="fb ok"><b>Question decoded.</b><ul><li><b style="color:var(--violet)">Task:</b> compare, explain and show how the sources <em>differ</em>.</li><li><b style="color:var(--sky)">Sources:</b> only Source A and Source B.</li><li><b style="color:var(--coral)">Focus:</b> how the violence started. Nothing else counts.</li></ul></div>`;
+      award('m1.tags',20);say('Perfect. Everything you write must serve that focus: <b>how the violence started</b>.','cheer');part(1,'tags');
+    }else{
+      fb.innerHTML=`<div class="fb bad"><b>Not yet.</b> ${miss?`You have not tagged ${miss} key word${miss>1?'s':''}. `:''}${wrong?`${wrong} word${wrong>1?'s have':' has'} the wrong pen or does not need one. `:''}Hint: there are 3 task words, 2 sources and a 2-word focus at the end.</div>`;
+      say('Slow down and read each word. Which ones tell you what to do, where to look, or what the topic is?','oops');
+    }
+  };
+  mcq($('#qz'),[
+   {q:'1. What must your answer be about?',say:'The focus is only the start of the violence.',o:[
+     {t:'Everything that happened on 16 June 1976',why:'That is far too wide. The question has a specific focus.'},
+     {t:'Why the learners were protesting',why:'That is a different topic. Stay on the focus: how the violence started.'},
+     {t:'How the two sources differ about how the violence started',ok:1,why:'You combined the task (differ) with the exact focus.'},
+     {t:'Which source is more reliable',why:'That is a different question. This one does not ask about reliability.'}]},
+   {q:'2. What does “differ” ask you to do?',say:'Same point, different content.',o:[
+     {t:'Say what Source A says, then what Source B says, and stop',why:'That only describes. It never links the two sources.'},
+     {t:'Find a point both sources cover and show that they say something different about it',ok:1,why:'A difference needs the SAME point and DIFFERENT content.'},
+     {t:'List things that are similar in the two sources',why:'That is the opposite. Similarities are not differences.'},
+     {t:'Explain how today is different from 1976',why:'The word “differ” here compares the sources, not past and present.'}]},
+   {q:'3. Which of these is NOT required by the question?',say:'Good: keep the answer on target.',o:[
+     {t:'Evidence from both sources',why:'This IS required. The question asks about their evidence.'},
+     {t:'A link between what Source A and Source B say',why:'This IS required. “Compare” means linking.'},
+     {t:'The number of people who died and what happened after',ok:1,why:'The deaths and the aftermath are not how the violence started.'},
+     {t:'Evidence about how the violence started',why:'This IS required. It is the focus.'}]}
+  ],'m1.q',()=>part(1,'quiz'));
+  bindNav(1);
+}
+
+/* ---------- 2 Compare ---------- */
+function renderM2(st){
+  st.innerHTML=head(2,'To compare is to put two sources side by side and ask: do they talk about the same point, and do they say the same thing or something different?')+`
+  <section class="card"><h3>The Same-Point Test</h3><p class="lead">Every comparison starts with a point that BOTH sources talk about. Then ask if the content matches.</p>
+    <div class="grid2">
+      <div class="pt"><h4>Point: size of the crowd</h4><div class="pair"><div class="a"><b>Source A</b><br>about 500 learners</div><div class="vs">vs</div><div class="b"><b>Source B</b><br>thousands of learners</div></div><span class="verdict d">DIFFERENCE: same point, different content</span></div>
+      <div class="pt"><h4>Point: what the crowd was doing</h4><div class="pair"><div class="a"><b>Source A</b><br>singing, carrying placards</div><div class="vs">=</div><div class="b"><b>Source B</b><br>singing, holding placards</div></div><span class="verdict s">SIMILARITY: same point, same content</span></div>
+    </div></section>
+  <section class="card"><h3>Three traps to avoid</h3><div class="grid3">
+    <div class="trap"><h4>The listing trap</h4><div class="bad"><small>Weak</small>Source A says there were 500 learners. Source B says police stopped them.</div><div class="good"><small>Strong</small>Source A says about 500 learners were present, <b>whereas</b> Source B says there were thousands.</div></div>
+    <div class="trap"><h4>The meaning trap</h4><p style="font-size:.92rem">“Difference” does not mean “what the source says” and it does not mean “which source is better”. It means where the two sources are <b>unlike each other</b> on the same point.</p></div>
+    <div class="trap"><h4>The wrong-topic trap</h4><div class="bad"><small>Weak</small>Source A mentions when order was restored, <b>while</b> Source B mentions the walking route.</div><p style="font-size:.9rem;margin-top:8px">Different topics cannot be compared, even if you add “while”.</p></div>
+  </div></section>
+  <section class="card"><h3>Sort the statements</h3><p class="lead">Is each statement a similarity, a difference, or not a real comparison? Refer back to the sources in the briefing if you need to.</p><div id="sort"></div></section>`+navBar(2);
+  const items=[
+   {t:'Both sources say the learners were singing and carrying placards.',ans:'S',why:'A2 and B2 say the same thing about the same point: a similarity.',hint:'Do the two sources agree here, or not?'},
+   {t:'Source A says learners threw stones first, but Source B says police fired first.',ans:'D',why:'Both cover who acted first, and they say opposite things: a difference.',hint:'Both sources cover the same point. Do they agree?'},
+   {t:'Source A says about 500 learners were there.',ans:'N',why:'This only describes one source. A comparison needs both sources and a link between them.',hint:'Count how many sources this statement mentions.'},
+   {t:'Source A says about 500 learners were present, whereas Source B says there were thousands.',ans:'D',why:'Same point (crowd size), different content: a difference.',hint:'Same point, but is the content the same?'},
+   {t:'Both sources say that police fired shots.',ans:'S',why:'A5 and B4 both report shots fired: a similarity.',hint:'Check A5 and B4.'},
+   {t:'Source A talks about when order was restored, while Source B talks about the learners\' route to the stadium.',ans:'N',why:'These are different topics, so they cannot be compared. Choose a point that both sources cover.',hint:'Are these two sources talking about the same point?'}];
+  classify($('#sort'),items,[{k:'S',l:'Similarity',c:'green'},{k:'D',l:'Difference',c:'coral'},{k:'N',l:'Not a real comparison',c:'violet'}],'m2.s',10,()=>part(2,'sort'));
+}
+
+/* ---------- 3 Evidence ---------- */
+function renderM3(st){
+  st.innerHTML=head(3,'Evidence means words from the source that prove your point. A sentence can be true and interesting and still be useless for this question.')+`
+  <section class="card"><span class="focus"><i></i>Focus: how the violence started</span><h3>Step 1: Highlight only the evidence that fits the focus</h3><p class="lead">Tap the sentences that help answer the focus. Leave out background and aftermath. There are five pieces of key evidence in total.</p><div class="grid2">${paper('A',1)}${paper('B',1)}</div>
+    <div class="row"><button class="btn" id="chk" type="button">Check my evidence</button><button class="btn ghost" id="rst" type="button">Start again</button></div><div id="hfb"></div></section>
+  <section class="card"><h3>Step 2: Quote only what proves your point</h3><p class="lead">Copying a whole paragraph is not evidence. Use a short quote, in quotation marks, that proves one point.</p><div id="qq"></div></section>`+navBar(3);
+  const btns=$$('button.sent');
+  btns.forEach(b=>b.onclick=()=>{b.classList.remove('ok','no','miss','softsel');b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')});
+  const all=[].concat(SRC.A.s,SRC.B.s);
+  $('#rst').onclick=()=>{btns.forEach(b=>{b.className='sent';b.setAttribute('aria-pressed','false')});$('#hfb').innerHTML=''};
+  $('#chk').onclick=()=>{
+    let found=0,missed=[],wrongs=[];
+    all.forEach(s=>{
+      const b=$(`button[data-id="${s.id}"]`),sel=b.getAttribute('aria-pressed')==='true';
+      b.className='sent';
+      if(s.rel){if(sel){found++;b.classList.add('ok');award('m3.'+s.id,10)}else{missed.push(s);b.classList.add('miss')}}
+      else if(sel){if(s.opt)b.classList.add('softsel');else{wrongs.push(s);b.classList.add('no')}}
+    });
+    const fb=$('#hfb');
+    if(!missed.length&&!wrongs.length){
+      fb.innerHTML=`<div class="fb ok"><b>All 5 pieces of key evidence found, with nothing extra.</b><ul>${all.filter(s=>s.rel).map(s=>`<li><b>${s.id}:</b> ${s.why}</li>`).join('')}</ul></div>`;
+      say('That is a sharp eye. Notice that A4/A5 and B3/B4/B5 are all about <b>who did what first</b>. That is where the sources differ.','cheer');part(3,'hunt');
+    }else{
+      fb.innerHTML=`<div class="fb bad"><b>You found ${found} of 5.</b> Green = correct, crossed out red = not relevant, dashed orange = missed. Tap to adjust, then check again.<ul>${wrongs.map(s=>`<li><b>${s.id} is not needed:</b> ${s.why}</li>`).join('')}${missed.map(s=>`<li><b>You missed ${s.id}:</b> ${s.why}</li>`).join('')}</ul></div>`;
+      say('Ask of every sentence: does it tell me how the violence started? If it is background or aftermath, leave it.','oops');
+    }
+  };
+  mcq($('#qq'),[
+   {q:'You want to prove Source A blames the learners. Which is the BEST short quote?',say:'Short, exact and on topic.',o:[
+     {t:'“a crowd of roughly 500 learners gathered”',why:'True, but it only describes the crowd. It does not prove who started the violence.'},
+     {t:'“began throwing stones at the police vehicles”',ok:1,why:'Short, exact and it proves the point: Source A says the learners began the violence.'},
+     {t:'“Order was restored in the late afternoon”',why:'This is the aftermath, not the start.'}]},
+   {q:'You want to prove Source B says the police acted first. Which is the BEST short quote?',say:'Exactly the proof you need.',o:[
+     {t:'“We left school at about eight in the morning”',why:'This is background. It says nothing about who acted first.'},
+     {t:'“A policeman threw a tear-gas canister and then shots were fired into the crowd”',ok:1,why:'It names the first action (tear gas) and the shots, so it proves the point.'},
+     {t:'“By evening, parts of the township were burning”',why:'This is the aftermath, not how the violence started.'}]}
+  ],'m3.q',()=>part(3,'quote'));
+}
+
+/* ---------- 4 Events ---------- */
+function renderM4(st){
+  st.innerHTML=head(4,'Many learners mix up what each source says. Place every event with the right source, then check the ORDER. The same event can appear in both sources in a different order.')+`
+  <section class="card"><h3>Step 1: Which source mentions each event?</h3><p class="lead">Read the sources in the briefing again if you need to. Choose Source A only, Source B only, or both.</p><div id="ev"></div></section>
+  <section class="card"><h3>Step 2: Who acted first?</h3><div id="ord"></div><div id="tlbox" hidden></div></section>`+navBar(4);
+  const items=[
+   {t:'Learners sing and carry placards.',ans:'AB',why:'Both: A2 and B2 mention this.'},
+   {t:'Police order the crowd to disperse.',ans:'A',why:'Only A3 says this. Source B does not mention an order.'},
+   {t:'Learners walk towards Orlando Stadium.',ans:'B',why:'Only B1 mentions the walk to the stadium.'},
+   {t:'Tear gas is thrown.',ans:'B',why:'Only B4 mentions tear gas.'},
+   {t:'Warning shots are fired.',ans:'A',why:'Only A5 mentions warning shots.'},
+   {t:'Stones are thrown.',ans:'AB',why:'Both: A4 and B5. Watch the order in Step 2.'},
+   {t:'Shots are fired at or near the crowd.',ans:'AB',why:'Both: A5 and B4 report shots.'},
+   {t:'People are hurt or killed.',ans:'AB',why:'Both: A7 reports two deaths and B6 reports wounded learners.'},
+   {t:'Parts of the township burn.',ans:'B',why:'Only B7 mentions burning.'}];
+  classify($('#ev'),items,[{k:'A',l:'Source A only',c:'sky'},{k:'AB',l:'Both sources',c:'green'},{k:'B',l:'Source B only',c:'sun'}],'m4.e',5,()=>{part(4,'sort');say('Now the clever part. Both sources mention stones and shots. Who acted first in each?')});
+  let n=0;
+  const reveal=()=>{n++;if(n<2)return;
+    const b=$('#tlbox');b.hidden=false;
+    b.innerHTML=`<div class="fb info"><b>Same events, different order.</b> This is a difference in sequence, and it is the heart of the question.</div><div class="grid2" style="margin-top:14px"><div class="tcol"><h4>Source A order</h4><ol class="tl"><li>Crowd gathers, singing</li><li>Police order it to disperse</li><li class="stone">Learners throw stones</li><li class="shot">Warning shots, then further shots</li><li>Order restored</li></ol></div><div class="tcol"><h4>Source B order</h4><ol class="tl"><li>Learners walk and sing</li><li>Police stop them</li><li class="shot">Tear gas, then shots into the crowd</li><li class="stone">Some learners throw stones</li><li>Township burns</li></ol></div></div>`;
+    part(4,'order');
+  };
+  mcq($('#ord'),[
+   {q:'In Source A, what happened first?',pts:10,say:'A4 comes before A5.',o:[
+     {t:'The learners threw stones',ok:1,why:'A4: learners began throwing stones. Only then, in A5, did police fire.'},
+     {t:'The police fired shots',why:'In A5 the shots come after the stone-throwing.'},
+     {t:'The township burned',why:'Source A does not mention burning.'}]},
+   {q:'In Source B, what happened first?',pts:10,say:'B4 comes before B5.',o:[
+     {t:'The police threw tear gas and fired shots',ok:1,why:'B4 puts police action first. B5 says stones came “only after that”.'},
+     {t:'The learners threw stones',why:'B5 says stones were thrown only after the police action.'},
+     {t:'The learners went home',why:'Source B does not say this.'}]}
+  ],'m4.o',null);
+  /* hook reveal after each correct answer */
+  $$('#ord .q').forEach(q=>{new MutationObserver(()=>{if($('.opt.ok',q)&&!q.dataset.counted){q.dataset.counted=1;reveal()}}).observe(q,{subtree:true,attributes:true,attributeFilter:['class']})});
+}
+
+/* ---------- 5 Link words ---------- */
+function renderM5(st){
+  st.innerHTML=head(5,'Markers look for link words. Without them, your answer is two summaries stuck together. With them, it is a comparison.')+`
+  <section class="card"><h3>Your toolkit</h3><div class="grid2"><div><p style="font-weight:700;margin-bottom:8px">To show a similarity</p><div class="chips"><span class="chip s">Similarly,</span><span class="chip s">Likewise,</span><span class="chip s">In the same way,</span><span class="chip s">Both … and …</span><span class="chip s">Also</span></div></div><div><p style="font-weight:700;margin-bottom:8px">To show a difference</p><div class="chips"><span class="chip d">However,</span><span class="chip d">In contrast,</span><span class="chip d">Whereas</span><span class="chip d">On the other hand,</span><span class="chip d">Unlike</span></div></div></div>
+   <div class="grid2" style="margin-top:14px"><div class="pt"><h4>Pattern 1: two sentences</h4><p style="font-size:.95rem">Source A says learners threw stones first. <b>However,</b> Source B says police fired first.</p></div><div class="pt"><h4>Pattern 2: one sentence</h4><p style="font-size:.95rem">Source A says learners threw stones first, <b>whereas</b> Source B says police fired first.</p></div></div></section>
+  <section class="card"><h3>Step 1: Similarity or difference?</h3><p class="lead">What does each link word tell the reader?</p><div id="w"></div></section>
+  <section class="card"><h3>Step 2: Choose the link word that fits</h3><div id="f"></div></section>`+navBar(5);
+  const W=[['Similarly','S','Signals that two points are alike.'],['However','D','Signals a contrast with the sentence before it.'],['Likewise','S','Another word for “in the same way”.'],['In contrast','D','Puts two opposite ideas side by side.'],['Whereas','D','Joins two opposite points inside ONE sentence.'],['In the same way','S','Signals a similarity.'],['On the other hand','D','Introduces the opposite side.'],['Unlike','D','Shows that one source differs from the other.'],['Both … and …','S','Shows that two sources share the same point.'],['Also','S','Adds a similar point.']];
+  classify($('#w'),W.map(x=>({t:`<b style="font-size:1.1rem">${x[0]}</b>`,ans:x[1],why:x[2],hint:'Does this word join things that are alike, or things that are opposite?'})),[{k:'S',l:'Similarity',c:'green'},{k:'D',l:'Difference',c:'coral'}],'m5.w',3,()=>part(5,'words'));
+  mcq($('#f'),[
+   {q:'Source A claims the learners threw stones first. <span class="blank">_____</span> Source B says the police acted first.',o:[{t:'Similarly,',why:'“Similarly” signals a likeness, but these sources disagree.'},{t:'In contrast,',ok:1,why:'The two sources disagree about who acted first, so you need a contrast word.'},{t:'Likewise,',why:'“Likewise” signals a likeness, but these sources disagree.'}]},
+   {q:'Source A says the learners were singing. <span class="blank">_____</span> Source B says the learners were singing.',o:[{t:'However,',why:'There is no contrast here. Both sources agree.'},{t:'Similarly,',ok:1,why:'Both sources say the same thing, so use a similarity word.'},{t:'Whereas',why:'“Whereas” signals a contrast, but these sources agree.'}]},
+   {q:'Source A says about 500 learners were present, <span class="blank">_____</span> Source B says there were thousands.',o:[{t:'likewise',why:'The numbers are not alike, so you need a contrast word.'},{t:'whereas',ok:1,why:'“Whereas” links two unlike points in one sentence.'},{t:'also',why:'“Also” adds a similar point, but these numbers differ.'}]},
+   {q:'<span class="blank">_____</span> Source A, which blames the learners, Source B suggests the police acted first.',o:[{t:'Similarly to',why:'The two sources are not alike on this point.'},{t:'Both',why:'“Both” needs “and” and signals a similarity.'},{t:'Unlike',ok:1,why:'“Unlike Source A, Source B…” correctly signals a difference.'}]}
+  ],'m5.f',()=>part(5,'fill'));
+}
+
+/* ---------- 6 Write ---------- */
+const TRANS=/\b(however|in contrast|by contrast|whereas|on the other hand|unlike|conversely|while)\b/gi;
+function renderM6(st){
+  st.innerHTML=head(6,'Time to put it all together. Use the S.T.O.P. rule, the evidence you hunted and the link words. Tap a card to drop it into the box you are typing in.')+`
+  <section class="card"><span class="focus"><i></i>Focus: how the violence started</span><h3>${QUESTION}</h3>
+   <div class="grid2" style="margin-top:10px"><div style="min-width:0">
+    <label class="wlab" for="w1"><i>1</i>Say how the sources differ</label><textarea id="w1" placeholder="Source A and Source B differ in their evidence about how the violence started. …"></textarea>
+    <label class="wlab" for="w2"><i>2</i>Evidence from Source A</label><textarea id="w2" placeholder="Source A states that “…”"></textarea>
+    <label class="wlab" for="w3"><i>3</i>Link word, then evidence from Source B</label><textarea id="w3" placeholder="In contrast, Source B claims that “…”"></textarea>
+    <label class="wlab" for="w4"><i>4</i>Sum up the difference</label><textarea id="w4" placeholder="Therefore the sources differ about who …"></textarea>
+   </div><div style="min-width:0">
+    <p style="font-weight:700;margin-bottom:8px">Evidence bank</p><div class="chips" id="eb"></div>
+    <p style="font-weight:700;margin:14px 0 8px">Link words</p><div class="chips" id="tb"></div>
+    <p style="font-weight:700;margin:14px 0 8px">Marking checklist</p><ul class="check" id="cl"></ul>
+    <p style="margin-top:12px;font-size:.92rem"><b>Link words found:</b> <span id="found" style="color:var(--muted)">none yet</span></p>
+   </div></div>
+   <div class="row"><button class="btn" id="mark" type="button">Mark my answer</button></div><div id="mfb"></div><div id="model"></div></section>`+navBar(6);
+  const ev=[['A','began throwing stones at the police vehicles'],['A','further shots were fired in self-defence'],['B','shots were fired into the crowd'],['B','We carried no weapons'],['B','Only after that did some learners throw stones']];
+  $('#eb').innerHTML=ev.map(e=>`<button type="button" class="chip e" data-t="“${e[1]}”">Source ${e[0]}: “${e[1]}”</button>`).join('');
+  $('#tb').innerHTML=['However,','In contrast,','Whereas','Unlike','On the other hand,','Similarly,'].map(t=>`<button type="button" class="chip ${t==='Similarly,'?'s':'d'}" data-t="${t} ">${t}</button>`).join('');
+  let last=$('#w1');$$('textarea').forEach(t=>t.addEventListener('focus',()=>last=t));
+  $$('#eb .chip,#tb .chip').forEach(c=>c.onclick=()=>{const s=last.selectionStart==null?last.value.length:last.selectionStart,e=last.selectionEnd==null?s:last.selectionEnd;last.value=last.value.slice(0,s)+c.dataset.t+last.value.slice(e);const p=s+c.dataset.t.length;last.focus();last.setSelectionRange(p,p);evalNow()});
+  const evalAns=()=>{
+    const v=['w1','w2','w3','w4'].map(i=>$('#'+i).value),all=v.join(' ').trim(),wc=all?all.split(/\s+/).length:0;
+    const evid=t=>/["“”].{5,}["“”]/.test(t)||/(stone|shot|tear|weapon|warning|self-defence)/i.test(t);
+    return [
+     {k:'names',l:'Names Source A and Source B',ok:/source a/i.test(all)&&/source b/i.test(all)},
+     {k:'evA',l:'Gives evidence from Source A (a quote or specific detail)',ok:evid(v[1])||(/source a/i.test(v[0]+v[3])&&evid(v[0]))},
+     {k:'evB',l:'Gives evidence from Source B (a quote or specific detail)',ok:evid(v[2])},
+     {k:'tr',l:'Uses a contrast word such as However, In contrast or Whereas',ok:new RegExp(TRANS.source,'i').test(all)},
+     {k:'topic',l:'Stays on the topic: how the violence started (first, began, before, after)',ok:/(started|start|began|begin|first|before|after)/i.test(all)&&/(violence|stone|shot|tear)/i.test(all)},
+     {k:'diff',l:'States clearly that the sources differ',ok:/(differ|different|difference|contradict|disagree|opposite)/i.test(all)},
+     {k:'len',l:'Is at least 40 words long ('+wc+' so far)',ok:wc>=40}];
+  };
+  function evalNow(){
+    const r=evalAns();$('#cl').innerHTML=r.map(x=>`<li class="${x.ok?'on':''}"><i>${ic('ok').replace('width="24" height="24"','width="14" height="14"')}</i><span>${x.l}</span></li>`).join('');
+    const all=['w1','w2','w3','w4'].map(i=>$('#'+i).value).join(' '),m=all.match(TRANS);
+    $('#found').textContent=m?Array.from(new Set(m.map(x=>x.toLowerCase()))).join(', '):'none yet';
+    return r;
+  }
+  $$('textarea').forEach(t=>t.addEventListener('input',evalNow));evalNow();
+  $('#mark').onclick=()=>{
+    const r=evalNow(),n=r.filter(x=>x.ok).length;r.forEach(x=>{if(x.ok)award('m6.'+x.k,10)});
+    const miss=r.filter(x=>!x.ok);
+    $('#mfb').innerHTML=n===7?`<div class="fb ok"><b>7 out of 7.</b> Your answer compares, uses evidence from both sources, links with transition words and stays on the focus.</div>`:`<div class="fb ${n>=6?'ok':'bad'}"><b>${n} out of 7.</b> ${n>=6?'Strong answer. To reach full marks:':'Keep going. Still missing:'}<ul>${miss.map(x=>`<li>${x.l}</li>`).join('')}</ul></div>`;
+    say(n>=6?'Excellent work. Compare your answer with the model below.':'You are close. Fix the missing points in the checklist, then mark again.',n>=6?'cheer':'oops');
+    $('#model').innerHTML=`<div class="model"><h3 style="margin-bottom:8px">Model answer</h3><p>Source A and Source B <mark>differ</mark> in their evidence about how the violence started. Source A states that the learners “began throwing stones at the police vehicles” and that police fired shots only afterwards, “in self-defence”. <span class="tr">In contrast,</span> Source B claims that a policeman threw tear gas and “shots were fired into the crowd” before “some learners threw stones”. Source B also stresses that the learners “carried no weapons”. <span class="tr">Therefore</span> the sources differ about who acted first: Source A blames the learners, <span class="tr">whereas</span> Source B suggests that the police started the violence.</p><p style="margin-top:10px;font-size:.92rem"><b>Why it works:</b> it names both sources, answers only the focus, quotes short pieces of evidence, uses link words and says plainly how they differ.</p></div>`;
+    if(n>=6)part(6,'write');
+  };
+}
+
+/* ---------- 7 Certificate ---------- */
+function renderCert(st){
+  const got=Object.keys(state.done).filter(k=>state.done[k]).length;
+  st.innerHTML=`<section class="mhead"><div><p class="eyebrow">Your results</p><h2>Detective Certificate</h2><div class="fixes"><span>${state.xp} XP</span><span>${rankName()}</span><span>${got} of 6 badges</span></div></div><div class="big">${ic('star')}</div></section>
+  <section class="card cert"><h3>${got===6?'Well done, Chief Historian in the making':'Keep going, detective'}</h3><p class="lead">${got===6?'You have completed every mission.':'Finish the remaining missions to collect all six badges.'}</p>
+  <div class="badges">${MISSIONS.slice(1,7).map((M,i)=>`<div class="badge ${state.done[i+1]?'got':''}" style="--mc:var(--${M.c});--on:${M.c==='sun'?'#2E2200':'var(--on)'}"><div class="medal">${ic(M.icon)}</div>${M.badge}</div>`).join('')}</div>
+  <h3 style="margin-top:8px">Six golden rules for comparing sources</h3>
+  <ol class="rules"><li><span><b>STOP first.</b> Tag the task words, the sources and the exact focus before you write.</span></li><li><span><b>A difference needs the same point.</b> Both sources must talk about it, and say something unlike each other.</span></li><li><span><b>Evidence must match the focus.</b> Leave out background and aftermath.</span></li><li><span><b>Quote short and exact.</b> Use quotation marks and name the source.</span></li><li><span><b>Check the events and their order.</b> The same event can appear in both sources in a different sequence.</span></li><li><span><b>Link with transition words.</b> However, in contrast and whereas for differences. Similarly and likewise for likeness.</span></li></ol>
+  <div class="row" style="justify-content:center"><button class="btn" id="again" type="button" style="--mc:var(--violet);--on:#fff">Play again from the start</button></div></section>`+navBar(7);
+  $('#again').onclick=()=>{state.xp=0;state.awarded={};state.done={};state.parts={};save();updateXP();go(0)};
+}
+
+/* ---------- boot ---------- */
+$('#logo').innerHTML=`<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/><path d="M7.5 10.5l2 2 3.5-4"/></svg>`;
+load();updateXP();
+go(0);
+})();
+</script>
+
+</body></html>
